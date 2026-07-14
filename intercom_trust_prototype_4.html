@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust-Sensitive Escalation · Intercom Case Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:    #0A0A0A;
+  --ink:      #1A1A1A;
+  --ink-60:   #1A1A1A99;
+  --ink-30:   #1A1A1A4D;
+  --surface:  #F5F4F1;
+  --card:     #FFFFFF;
+  --border:   #E2E0DA;
+
+  /* Intercom palette (muted, used for "before" side) */
+  --icm-blue: #1F5EFF;
+  --icm-lt:   #EEF3FF;
+  --icm-msg:  #F0F1F3;
+
+  /* Trust layer palette (you) */
+  --teal:     #0A6E6E;
+  --teal-lt:  #E0F4F4;
+  --teal-md:  #5BBCBC;
+  --amber:    #D97706;
+  --amber-lt: #FEF3C7;
+  --red:      #DC2626;
+  --red-lt:   #FEE2E2;
+  --green:    #059669;
+  --green-lt: #D1FAE5;
+
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+.nav {
+  height: 58px;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: .03em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-logo span {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal-md);
+}
+.nav-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #ffffff55;
+  letter-spacing: .08em;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 80px 40px 64px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-eyebrow::after {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: var(--teal-md);
+}
+.hero h1 {
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin-bottom: 20px;
+  max-width: 760px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--teal);
+}
+.hero-sub {
+  font-size: 17px;
+  color: var(--ink-60);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+.hero-chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink-60);
+}
+.chip-teal { background: var(--teal-lt); border-color: var(--teal-md); color: var(--teal); }
+
+/* ── DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 40px;
+}
+
+/* ── INSIGHT STRIP ── */
+.insight-strip {
+  background: var(--black);
+  padding: 32px 40px;
+}
+.insight-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+}
+.insight-item {}
+.insight-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #ffffff44;
+  margin-bottom: 8px;
+}
+.insight-text {
+  font-size: 14px;
+  color: #ffffffcc;
+  line-height: 1.55;
+}
+.insight-text strong { color: #fff; font-weight: 500; }
+
+/* ── SCENARIO PICKER ── */
+.scenario-section {
+  padding: 64px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.scenario-header {
+  margin-bottom: 32px;
+}
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-30);
+  margin-bottom: 10px;
+}
+.section-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.section-sub {
+  font-size: 14px;
+  color: var(--ink-60);
+}
+
+.scenario-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+.stab {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink-60);
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.stab:hover { border-color: var(--teal-md); color: var(--ink); }
+.stab.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.stab-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── SPLIT DEMO ── */
+.split-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.demo-panel {
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.demo-panel-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.demo-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.panel-fin .demo-panel-title { color: var(--icm-blue); }
+.panel-trust .demo-panel-title { color: var(--teal); }
+.demo-panel-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 400;
+}
+.panel-fin .demo-panel-badge {
+  background: var(--icm-lt);
+  color: var(--icm-blue);
+}
+.panel-trust .demo-panel-badge {
+  background: var(--teal-lt);
+  color: var(--teal);
+}
+
+/* ── MESSENGER SIMULATION — Fin UI faithful reproduction ── */
+
+/* 對話容器：純白背景，和 Fin messenger 一致 */
+.messenger {
+  padding: 20px 16px 16px;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #FFFFFF;
+  font-family: -apple-system, 'Inter', sans-serif;
+}
+
+/* 每一則訊息的外層 wrapper */
+.msg {
+  display: flex;
+  flex-direction: column;
+  animation: msgIn .22s ease;
+  margin-bottom: 4px;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 頭像 + 氣泡的橫排 */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.msg.user .msg-row { flex-direction: row-reverse; }
+
+/* 頭像：對齊 Fin 的黑色圓形 logo */
+.msg-avatar {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.msg-avatar.fin-av   { background: transparent; overflow: hidden; padding: 0; }
+.msg-avatar.trust-av { background: transparent; overflow: hidden; padding: 0; }
+.msg-avatar.user-av  { background: #D1D5DB; color: #374151; font-size: 11px; font-weight: 600; border-radius: 50%; }
+.msg-avatar img      { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+
+/* 氣泡右側的文字區（包含氣泡 + source + tag） */
+.msg-content { display: flex; flex-direction: column; max-width: 78%; }
+.msg.user .msg-content { align-items: flex-end; }
+
+/* 氣泡本體 */
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: -.01em;
+}
+
+/* Bot 氣泡：白底、淺灰邊框，左下角方，和 Fin 一樣 */
+.msg.bot .msg-bubble {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #111827;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+/* User 氣泡：深黑，右下角方，對應截圖 */
+.msg.user .msg-bubble {
+  background: #0F0F0F;
+  color: #FFFFFF;
+  border-bottom-right-radius: 4px;
+  border: none;
+}
+
+/* 狀態氣泡 */
+.msg-bubble.escalate-urgent  { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+.msg-bubble.escalate-nurture { background: #FFFBEB; border-color: #FDE68A; color: #92400E; }
+.msg-bubble.classify         { background: #F0FAFA; border-color: #99D6D6; color: #0A6E6E; }
+.msg-bubble.resolved         { background: #F0FDF4; border-color: #BBF7D0; color: #166534; }
+
+/* Source 連結，對應截圖的「Source / Changing your reservation date >」 */
+.msg-source {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin-top: 5px;
+  padding-left: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.msg-source a { color: #6B7280; text-decoration: none; font-weight: 500; }
+.msg-source a:hover { color: #374151; }
+
+/* AI Answer badge，對應截圖的「AI Answer ⓘ」 */
+.msg-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #9CA3AF;
+  margin-top: 4px;
+  padding-left: 2px;
+  letter-spacing: .02em;
+  font-weight: 500;
+}
+
+/* Escalation tag — 放在氣泡下方 */
+.esc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 6px;
+  letter-spacing: .03em;
+}
+.esc-tag.urgent       { background: #FEE2E2; color: #DC2626; }
+.esc-tag.nurture      { background: #FEF3C7; color: #D97706; }
+.esc-tag.resolved-tag { background: #D1FAE5; color: #059669; }
+.esc-tag.classify-tag { background: #E0F4F4; color: #0A6E6E; }
+.esc-tag.no-answer    { background: #F3F4F6; color: #6B7280; }
+
+.msg-meta { display: none; }
+
+/* escalation tag */
+.esc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+.esc-tag.urgent { background: var(--red-lt); color: var(--red); }
+.esc-tag.nurture { background: var(--amber-lt); color: var(--amber); }
+.esc-tag.resolved-tag { background: var(--green-lt); color: var(--green); }
+.esc-tag.classify-tag { background: var(--teal-lt); color: var(--teal); }
+.esc-tag.no-answer { background: #F3F4F6; color: #374151; }
+
+/* ── DECISION BOX ── */
+.decision-box {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 14px 18px;
+}
+.decision-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-30);
+  margin-bottom: 6px;
+}
+.decision-text {
+  font-size: 12px;
+  color: var(--ink-60);
+  line-height: 1.55;
+}
+.decision-text strong { color: var(--ink); font-weight: 500; }
+
+/* ── COMPARISON TABLE ── */
+.comparison-section {
+  background: var(--black);
+  padding: 64px 40px;
+}
+.comparison-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.comparison-inner .section-label { color: #ffffff44; }
+.comparison-inner .section-title { color: #fff; }
+.comparison-inner .section-sub { color: #ffffff66; }
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 28px;
+}
+.comparison-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 400;
+  border-bottom: 1px solid #ffffff15;
+}
+.comparison-table th:first-child { color: #ffffff44; }
+.comparison-table th.col-fin { color: #6B8FFF; }
+.comparison-table th.col-trust { color: var(--teal-md); }
+
+.comparison-table td {
+  padding: 14px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid #ffffff08;
+  vertical-align: top;
+  line-height: 1.55;
+}
+.comparison-table td:first-child {
+  color: #ffffff66;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.comparison-table td.col-fin { color: #ffffffaa; }
+.comparison-table td.col-trust { color: #ffffffcc; }
+.comparison-table tr:hover td { background: #ffffff04; }
+
+/* ── DECISION DEFENSE ── */
+.defense-section {
+  padding: 64px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.defense-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 28px;
+}
+.defense-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px;
+}
+.defense-card-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--teal);
+  margin-bottom: 8px;
+  letter-spacing: .06em;
+}
+.defense-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+.defense-row {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.defense-row:last-child { border-bottom: none; }
+.defense-row-label {
+  font-weight: 500;
+  color: var(--ink-60);
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 12px;
+  padding-top: 1px;
+}
+.defense-row-val { color: var(--ink); line-height: 1.55; }
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--black);
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-left { font-size: 13px; color: #ffffff55; }
+.footer-left strong { color: #fff; font-weight: 500; }
+.footer-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--teal-md);
+  text-decoration: none;
+  letter-spacing: .04em;
+}
+.footer-link:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <span></span>
+    Trust-Sensitive Escalation · Intercom Case Study
+  </div>
+  <div class="nav-meta">ARSHA HSIA · PM PORTFOLIO · 2025</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Case Study · Enterprise SaaS</div>
+  <h1>Exploring a trust-sensitive escalation layer for Fin</h1>
+  <p class="hero-sub">
+    A resolution-first baseline detects frustration, repeated loops, and explicit requests for human help — all behavioural proxy signals. This prototype explores what changes when the system first asks <em>why</em> trust is low, before deciding what to do next.
+  </p>
+  <div class="hero-chips">
+    <div class="chip chip-teal">Trust-Sensitive Escalation</div>
+    <div class="chip">Human-in-the-Loop Design</div>
+    <div class="chip">B2B SaaS · Customer Support AI</div>
+    <div class="chip">Intercom Fin · Redesign Concept</div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- INSIGHT STRIP -->
+
+<!-- Disclosure banner -->
+<div style="background:#FEF3C7;border-bottom:1px solid #FDE68A;padding:10px 40px;">
+  <div style="max-width:1100px;margin:0 auto;font-size:12px;color:#78350F;line-height:1.55;">
+    <strong>Disclosure:</strong> This concept is based solely on publicly observable Fin product behaviour and published materials. It does not claim to represent Fin's internal routing architecture, ML models, or escalation logic. All "baseline" scenarios are simplified illustrative models used to frame the design hypothesis.
+  </div>
+</div>
+
+<div class="insight-strip">
+  <div class="insight-inner">
+    <div class="insight-item">
+      <div class="insight-label">The gap</div>
+      <div class="insight-text">A resolution-first baseline escalates when it detects <strong>negative sentiment or complexity</strong>. Neither signal tells you <em>why</em> the user doesn't trust the answer — which determines what to do next.</div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-label">The hypothesis</div>
+      <div class="insight-text"><strong>Brand skepticism</strong> and <strong>self-ambiguity</strong> look identical in sentiment scores but need opposite responses. Collapsing them into one escalation path gets one group wrong every time.</div>
+    </div>
+    <div class="insight-item">
+      <div class="insight-label">The design decision</div>
+      <div class="insight-text">Before escalating, the system inserts a <strong>trust classification gate</strong> — a single question that separates these two states and routes them differently.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENARIO DEMO -->
+<section class="scenario-section">
+  <div class="scenario-header">
+    <div class="section-label">Interactive Demo</div>
+    <div class="section-title">Five trust states. Two different systems.</div>
+    <div class="section-sub">Select a scenario to see how Fin's current logic compares to the Trust Layer approach.</div>
+  </div>
+
+  <div class="scenario-tabs">
+    <button class="stab active" onclick="setScenario(0)">
+      <span class="stab-dot" style="background:#059669"></span>High trust
+    </button>
+    <button class="stab" onclick="setScenario(1)">
+      <span class="stab-dot" style="background:#DC2626"></span>Brand skepticism
+    </button>
+    <button class="stab" onclick="setScenario(2)">
+      <span class="stab-dot" style="background:#D97706"></span>Self-ambiguity
+    </button>
+    <button class="stab" onclick="setScenario(3)">
+      <span class="stab-dot" style="background:#6B7280"></span>Direction unclear
+    </button>
+    <button class="stab" onclick="setScenario(4)">
+      <span class="stab-dot" style="background:#7C3AED"></span>Hidden stakeholder
+    </button>
+  </div>
+
+  <div class="split-demo">
+    <!-- FIN PANEL -->
+    <div class="demo-panel panel-fin">
+      <div class="demo-panel-header">
+        <div class="demo-panel-title">Baseline · Resolution-first model</div>
+        <div class="demo-panel-badge">Observable escalation signals</div>
+      </div>
+      <div class="messenger" id="fin-chat"></div>
+      <div class="decision-box">
+        <div class="decision-label">System decision</div>
+        <div class="decision-text" id="fin-decision"></div>
+      </div>
+    </div>
+
+    <!-- TRUST LAYER PANEL -->
+    <div class="demo-panel panel-trust">
+      <div class="demo-panel-header">
+        <div class="demo-panel-title">Trust Layer · Redesign</div>
+        <div class="demo-panel-badge">Trust-state classification</div>
+      </div>
+      <div class="messenger" id="trust-chat"></div>
+      <div class="decision-box">
+        <div class="decision-label">System decision</div>
+        <div class="decision-text" id="trust-decision"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- COMPARISON TABLE -->
+<div class="comparison-section">
+  <div class="comparison-inner">
+    <div class="section-label" style="color:#ffffff44">Design comparison</div>
+    <div class="section-title" style="color:#fff;font-size:22px;font-weight:600;margin-bottom:6px">Where the two systems diverge</div>
+    <div class="section-sub" style="color:#ffffff55;font-size:14px">Every row is a product decision with a different answer.</div>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th class="col-fin">Baseline · Resolution-first</th>
+          <th class="col-trust">Trust Layer · Redesign</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Escalation trigger</td>
+          <td class="col-fin">Negative sentiment, repeated loops, explicit human request</td>
+          <td class="col-trust">Trust state — detected through direct classification, not behavioural proxy</td>
+        </tr>
+        <tr>
+          <td>Low-trust response</td>
+          <td class="col-fin">Route to human agent (single path)</td>
+          <td class="col-trust">First classify: brand skepticism → urgent AE; self-ambiguity → SDR discovery brief (problem definition first, not deal closing). SDR is briefed on ambiguity type so they arrive to help, not to pitch.</td>
+        </tr>
+        <tr>
+          <td>Direction-unclear user</td>
+          <td class="col-fin">The baseline attempts an answer based on available knowledge</td>
+          <td class="col-trust">System declines to answer — asks "what are you trying to solve?" before any response</td>
+        </tr>
+        <tr>
+          <td>Hidden stakeholder</td>
+          <td class="col-fin">No detection — conversation continues as normal</td>
+          <td class="col-trust">Detects "I need to check with my CTO/VP" → flags deal, notifies AE with stakeholder brief</td>
+        </tr>
+        <tr>
+          <td>Escalation timing</td>
+          <td class="col-fin">Immediate when triggered</td>
+          <td class="col-trust">Immediate for brand-skeptic; delayed 48h for self-ambiguous (content first)</td>
+        </tr>
+        <tr>
+          <td>Core design belief</td>
+          <td class="col-fin">AI resolves until it can't, then human takes over</td>
+          <td class="col-trust">"AI choosing not to answer" is a trust signal — not a system failure</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DECISION DEFENSE -->
+<section class="defense-section">
+  <div class="section-label">Decision rationale</div>
+  <div class="section-title">Three design decisions. Each one defended.</div>
+  <div class="section-sub" style="margin-top:6px;font-size:14px;color:var(--ink-60)">Every fork, judgment criterion, decision, and failure condition — documented.</div>
+
+  <div class="defense-grid">
+    <div class="defense-card">
+      <div class="defense-card-num">DECISION 01</div>
+      <div class="defense-card-title">Trust classification gate before escalation</div>
+      <div class="defense-row">
+        <div class="defense-row-label">The fork</div>
+        <div class="defense-row-val">Route all low-trust signals to immediate human escalation (Fin's current logic) vs. insert a classification question first.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Criterion</div>
+        <div class="defense-row-val">Brand skepticism and self-ambiguity look identical in sentiment scores but need opposite responses. Collapsing them into one path gets one group wrong every time.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Decision</div>
+        <div class="defense-row-val">Insert classification gate. Brand skepticism → urgent AE. Self-ambiguity → SDR discovery brief (not AE, not content — a human whose job is to define the problem, not close it). Gave up: simpler logic, lower build cost, consistent agent workflow.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Context note</div>
+        <div class="defense-row-val">In a resource-constrained context (limited Sales/AM headcount), self-ambiguous users route to content-first with delayed outreach instead — preserving scarce human capacity for users who are already directionally clear. Same trust state, different system design, because the business model is different.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Fails when</div>
+        <div class="defense-row-val">15 consecutive low-trust cases show &lt;10pp difference in response rate between the two paths → collapse back to single escalation.</div>
+      </div>
+    </div>
+
+    <div class="defense-card">
+      <div class="defense-card-num">DECISION 02</div>
+      <div class="defense-card-title">System declines to answer direction-unclear users</div>
+      <div class="defense-row">
+        <div class="defense-row-label">The fork</div>
+        <div class="defense-row-val">Fin attempts an answer using available knowledge vs. system refuses to answer and asks a clarifying question first.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Criterion</div>
+        <div class="defense-row-val">An answer to the wrong question increases confusion, not confidence. In high-cost B2B decisions, a misaligned answer is worse than no answer.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Decision</div>
+        <div class="defense-row-val">Decline to answer. Gave up: faster time-to-first-response, higher resolution rate metric in the short term.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Fails when</div>
+        <div class="defense-row-val">Users flagged as direction-unclear who receive a clarifying question have a lower satisfaction score than those who received a direct answer → revert.</div>
+      </div>
+    </div>
+
+    <div class="defense-card">
+      <div class="defense-card-num">DECISION 03</div>
+      <div class="defense-card-title">Hidden stakeholder detection triggers AE brief</div>
+      <div class="defense-row">
+        <div class="defense-row-label">The fork</div>
+        <div class="defense-row-val">Continue conversation as normal vs. detect "need to check with [title]" language and flag the deal with a stakeholder brief for the AE.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Criterion</div>
+        <div class="defense-row-val">Hidden stakeholders are the single most common reason B2B deals stall after a strong AI-assisted discovery. If the system can detect the signal, not flagging it is a product failure.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Decision</div>
+        <div class="defense-row-val">Flag and brief AE. Gave up: uninterrupted Fin conversation flow; risk of false positives creating noise for AEs.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label">Fails when</div>
+        <div class="defense-row-val">AE brief false positive rate &gt;30% (AEs report irrelevant flags) → tighten detection threshold before re-enabling.</div>
+      </div>
+    </div>
+
+    <div class="defense-card" style="background:var(--teal-lt);border-color:var(--teal-md);">
+      <div class="defense-card-num" style="color:var(--teal)">CORE BELIEF</div>
+      <div class="defense-card-title" style="color:var(--teal)">"AI choosing not to answer is a trust signal — not a system failure."</div>
+      <div class="defense-row" style="border-color:var(--teal-md)22;">
+        <div class="defense-row-label" style="color:var(--teal)88;">Resolution-first bet</div>
+        <div class="defense-row-val" style="color:var(--teal);">AI coverage maximisation — human is the fallback when AI can't resolve.</div>
+      </div>
+      <div class="defense-row" style="border-color:var(--teal-md)22;">
+        <div class="defense-row-label" style="color:var(--teal)88;">This bet</div>
+        <div class="defense-row-val" style="color:var(--teal);">Trust state determines escalation — not problem complexity. An AI answer to a low-trust user in a high-stakes B2B decision makes things worse, not better.</div>
+      </div>
+      <div class="defense-row">
+        <div class="defense-row-label" style="color:var(--teal)88;">Validated by</div>
+        <div class="defense-row-val" style="color:var(--teal);">Decision Confidence System beta — 80% lead-to-consultation conversion using trust-state routing (n=5, invited sample).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+<!-- TRUST STATE BOUNDARIES -->
+<section style="padding:64px 40px;max-width:1100px;margin:0 auto;">
+  <div class="section-label">Where the framework breaks down</div>
+  <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">Trust state boundaries — and what this prototype simplifies</div>
+  <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:32px;">The five scenarios above show idealised trust states. Real conversations are messier. Here is what the prototype assumes away, and what a production implementation would need to solve.</div>
+
+  <!-- 三欄：Single signal problem / Self-ambiguity vs Direction unclear / Design limitation -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px;">
+
+    <!-- 1 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:10px;">Prototype simplification 01</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">One question ≠ one trust state</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:16px;">
+        The five scenarios imply that a single message reveals a trust state. In reality, trust state is a multi-signal inference — no single question maps cleanly to one category.
+      </div>
+      <div style="background:var(--surface);border-radius:8px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:8px;">Production signals would combine:</div>
+        <div style="font-size:12px;color:var(--ink-60);line-height:1.7;">
+          · CRM context (first contact vs returning, company size, plan tier)<br>
+          · Conversation history (how many times this question type has appeared)<br>
+          · Language signals ("I'm not sure", "I'm comparing", "my CTO needs to...")<br>
+          · Behavioural data (which page they came from, what content they've consumed)<br>
+          · Explicit classification gate (the one question this prototype uses)
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;">Boundary case — hardest to distinguish</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Self-ambiguity vs Direction unclear</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:16px;">
+        These two states look similar on the surface — both involve vague questions and low engagement. The difference is not in the message; it's in <em>where the user is in their decision journey</em>.
+      </div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 0;color:var(--ink-60);width:50%;vertical-align:top;">Self-ambiguity</td>
+          <td style="padding:6px 0;color:var(--ink-60);vertical-align:top;">Direction unclear</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 0;color:var(--ink);vertical-align:top;">Already in the decision — unsure which option fits</td>
+          <td style="padding:6px 0;color:var(--ink);vertical-align:top;">Not yet in the decision — hasn't defined the problem</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 0;color:var(--ink);vertical-align:top;">"I don't know what I need"</td>
+          <td style="padding:6px 0;color:var(--ink);vertical-align:top;">"I'd like to learn more about your tools"</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:var(--teal);vertical-align:top;font-weight:500;">→ SDR discovery brief</td>
+          <td style="padding:6px 0;color:var(--teal);vertical-align:top;font-weight:500;">→ System asks "what problem are you solving?" first</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 3 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:10px;">What self-ambiguity actually is</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Self-ambiguity is low trust in one's own judgment — not low trust in the brand</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:16px;">
+        The user isn't questioning whether the product is credible. They're questioning whether <em>they</em> have the ability to judge if it's right for them. This is a different kind of uncertainty than brand skepticism.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:var(--red-lt);border-radius:8px;padding:10px 12px;font-size:12px;color:#7F1D1D;line-height:1.55;">
+          <strong>Brand skepticism:</strong> "I don't trust the information you're giving me" → needs external proof, human credibility
+        </div>
+        <div style="background:var(--amber-lt);border-radius:8px;padding:10px 12px;font-size:12px;color:#78350F;line-height:1.55;">
+          <strong>Self-ambiguity:</strong> "I don't trust my own ability to judge this" → needs a framework to define the problem, not more product information
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-60);margin-top:12px;line-height:1.55;">Giving a self-ambiguous user more product specs increases anxiety. The intervention is to slow down, not push forward.</div>
+    </div>
+  </div>
+
+  <!-- 底部：設計局限聲明 -->
+  <div style="background:var(--black);border-radius:var(--r);padding:28px 32px;">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ffffff33;margin-bottom:12px;">Known limitations of this prototype</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;font-size:13px;">
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">Single-turn classification</div>
+        <div style="color:#ffffff66;line-height:1.6;">This prototype classifies trust state from one message. Production would require multi-turn signal aggregation before any routing decision fires.</div>
+      </div>
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">Explicit gate vs implicit inference</div>
+        <div style="color:#ffffff66;line-height:1.6;">The classification gate asks users directly. At scale, this adds friction. A production version would infer trust type from CRM + behavioural signals first, and only ask when signals are ambiguous.</div>
+      </div>
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">Five clean states, messy reality</div>
+        <div style="color:#ffffff66;line-height:1.6;">Real conversations produce overlapping states — a user can be self-ambiguous <em>and</em> brand skeptical simultaneously. The prototype treats these as mutually exclusive for clarity; a real system would need to handle combinations.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- BUSINESS IMPACT MODEL -->
+<section style="padding:64px 40px;background:var(--surface);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label">Business impact model</div>
+    <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">Why this matters commercially</div>
+    <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:12px;">The design argument above needs to connect to a business argument. Here is the impact chain — and the research that supports each link.</div>
+    <div style="background:var(--teal-lt);border:1px solid var(--teal-md);border-radius:var(--r);padding:14px 18px;margin-bottom:36px;font-size:13px;color:var(--teal);line-height:1.6;">
+      <strong>Note on methodology:</strong> The numbers below are from published third-party research (Gartner, Forrester, 6sense), not internal Intercom data. The impact chain shows which metrics the Trust Layer would move and in which direction — the magnitude is what the validation experiment is designed to measure.
+    </div>
+
+    <!-- MARKET CONTEXT -->
+    <div style="margin-bottom:40px;">
+      <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:20px;">The market context</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;">
+          <div style="font-size:32px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px;">80%</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.55;margin-bottom:10px;">of the B2B buying journey is now self-directed — before any vendor contact</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-30);">Gartner, 2024</div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;">
+          <div style="font-size:32px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px;">67%</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.55;margin-bottom:10px;">of B2B buyers prefer a rep-free experience — yet self-service buyers are 1.65× more likely to experience purchase regret</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-30);">Gartner, Aug–Sep 2025 (n=646)</div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;">
+          <div style="font-size:32px;font-weight:700;color:var(--teal);letter-spacing:-.02em;margin-bottom:6px;">1.8×</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.55;margin-bottom:10px;">more likely to complete a high-quality deal when buyers engage with <em>both</em> digital tools and a human rep — not one or the other</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-30);">Gartner B2B Buying Report</div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;">
+          <div style="font-size:32px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px;">73%</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.55;margin-bottom:10px;">of B2B buyers actively avoid suppliers who send irrelevant outreach — bad escalation actively damages pipeline</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-30);">Gartner, 2024 (n=632)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPACT CHAIN -->
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:20px;">Impact chain — if the design hypothesis holds</div>
+
+    <!-- Chain 1 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:220px 1fr 1fr 1fr;min-height:100px;">
+        <div style="background:var(--ink);padding:20px;display:flex;flex-direction:column;justify-content:center;">
+          <div style="font-family:var(--mono);font-size:10px;color:#ffffff44;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Impact 01</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;line-height:1.4;">Fewer misrouted escalations</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:8px;">Problem</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Fin currently routes all low-trust signals to human agents with no context about <em>why</em> trust is low. Agents arrive to find users who aren't ready to be sold to — wasting handle time and triggering avoidance.</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin-bottom:8px;">Trust Layer changes</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Classification gate separates brand skeptics (need immediate human) from self-ambiguous users (need problem definition first). Each group receives a contextually appropriate handoff — not a generic escalation.</div>
+        </div>
+        <div style="padding:18px 20px;background:var(--surface);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-30);margin-bottom:8px;">Metric that moves</div>
+          <div style="font-size:13px;color:var(--ink);line-height:1.6;font-weight:500;">AE/SDR utilisation rate ↑<br>Cost-per-qualified-conversation ↓</div>
+          <div style="font-size:11px;color:var(--ink-30);margin-top:8px;line-height:1.5;">Supporting: 73% of buyers avoid suppliers with irrelevant outreach (Gartner 2024) — misrouted escalations are not neutral, they are actively harmful.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chain 2 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:220px 1fr 1fr 1fr;min-height:100px;">
+        <div style="background:var(--teal);padding:20px;display:flex;flex-direction:column;justify-content:center;">
+          <div style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Impact 02</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;line-height:1.4;">Higher pipeline conversion at early stage</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:8px;">Problem</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Self-ambiguous users — those who haven't yet defined their problem — are being met with product information before they're ready. They disengage. The deal dies before it enters the pipeline.</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin-bottom:8px;">Trust Layer changes</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Routes self-ambiguous users to an SDR whose job is problem definition, not deal closing. This creates a lower-pressure first human touchpoint at the stage when the buyer most needs it.</div>
+        </div>
+        <div style="padding:18px 20px;background:var(--surface);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-30);margin-bottom:8px;">Metric that moves</div>
+          <div style="font-size:13px;color:var(--ink);line-height:1.6;font-weight:500;">Early-stage pipeline entry rate ↑<br>7-day demo/discovery booking rate ↑</div>
+          <div style="font-size:11px;color:var(--ink-30);margin-top:8px;line-height:1.5;">Supporting: Buyers are 1.8× more likely to close a high-quality deal with digital + human hybrid vs digital alone (Gartner). The Trust Layer is the mechanism that creates the right hybrid at the right moment.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chain 3 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:40px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:220px 1fr 1fr 1fr;min-height:100px;">
+        <div style="background:#1A1A2E;padding:20px;display:flex;flex-direction:column;justify-content:center;">
+          <div style="font-family:var(--mono);font-size:10px;color:#ffffff44;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Impact 03</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;line-height:1.4;">Brand trust at first contact</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:8px;">Problem</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">When escalations happen without context, agents repeat what Fin already said, or pitch before the user is ready. This is the moment most likely to generate the "overwhelmed and frustrated" response Gartner documented.</div>
+        </div>
+        <div style="padding:18px 20px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin-bottom:8px;">Trust Layer changes</div>
+          <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Every escalation carries a trust-type brief. The agent or SDR knows whether to lead with empathy and evidence (brand skeptic) or curiosity and problem mapping (self-ambiguous). First contact quality improves.</div>
+        </div>
+        <div style="padding:18px 20px;background:var(--surface);">
+          <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-30);margin-bottom:8px;">Metric that moves</div>
+          <div style="font-size:13px;color:var(--ink);line-height:1.6;font-weight:500;">First-contact CSAT ↑<br>Time-to-trust ↓<br>Trial-to-paid conversion ↑</div>
+          <div style="font-size:11px;color:var(--ink-30);margin-top:8px;line-height:1.5;">Supporting: Buyers are 32pp more likely to feel confident in a purchase decision after speaking with a rep vs AI alone (Gartner 2025). The brief ensures the human shows up ready to build that confidence.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The core tension -->
+    <div style="background:var(--black);border-radius:var(--r);padding:32px 36px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ffffff33;margin-bottom:12px;">The tension this design resolves</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#ffffff88;margin-bottom:8px;">Gartner's paradox</div>
+          <div style="font-size:13px;color:#ffffff55;line-height:1.65;">67% of B2B buyers prefer rep-free — but self-service buyers are 1.65× more likely to regret their purchase. Buyers <em>want</em> to avoid reps, but they <em>need</em> them at specific moments.</div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#ffffff88;margin-bottom:8px;">What a resolution-first baseline does</div>
+          <div style="font-size:13px;color:#ffffff55;line-height:1.65;">Routes to human based on frustration signals — which means the human appears when the relationship is already damaged, not when trust is still being formed.</div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--teal-md);margin-bottom:8px;">What the Trust Layer does</div>
+          <div style="font-size:13px;color:#ffffffaa;line-height:1.65;">Routes based on trust state — which means the human appears at the moment the buyer needs them most, in the form that matches why trust is low. That's the 1.8× multiplier, applied correctly.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- VALIDATION PLAN -->
+<section style="padding:64px 40px;max-width:1100px;margin:0 auto;">
+  <div class="section-label">If I were proposing this internally</div>
+  <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">Validation Plan</div>
+  <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:32px;">How I would design the experiment to prove — or disprove — the Classification Gate hypothesis at Intercom's scale.</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <!-- Hypothesis -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px;">Hypothesis</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">The Classification Gate improves outcomes for low-trust users without degrading overall resolution metrics.</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;">Specifically: routing self-ambiguous users to content-first (nurture) rather than immediate human escalation will increase their 7-day consultation booking rate, without increasing cost-per-resolution for the overall Fin population.</div>
+    </div>
+
+    <!-- Experiment design -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px;">Experiment Design</div>
+      <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">A/B test on low-trust signal population only</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;">
+        <strong style="color:var(--ink);">Control:</strong> Resolution-first baseline — all low-trust signals escalate to human agent immediately.<br><br>
+        <strong style="color:var(--ink);">Treatment:</strong> Classification Gate inserted — one question routes to brand-skeptic (urgent) or self-ambiguous (nurture-first, 48h delayed outreach).<br><br>
+        <strong style="color:var(--ink);">Scope:</strong> B2B accounts on Sales/Service Hub trial or evaluation stage only — where trust state has the highest impact on conversion.
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px;">Metrics</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 0;color:var(--ink-60);width:140px;vertical-align:top;">Primary</td>
+          <td style="padding:8px 0;color:var(--ink);">7-day consultation / demo booking rate for low-trust users</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 0;color:var(--ink-60);vertical-align:top;">Guardrail</td>
+          <td style="padding:8px 0;color:var(--ink);">Overall CSAT score; cost-per-resolution; human agent handle time — must not degrade vs. control</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 0;color:var(--ink-60);vertical-align:top;">Classification accuracy</td>
+          <td style="padding:8px 0;color:var(--ink);">% of classified users whose subsequent behaviour matches predicted type (brand-skeptic vs. self-ambiguous)</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:var(--ink-60);vertical-align:top;">Learning metric</td>
+          <td style="padding:8px 0;color:var(--ink);">Response rate delta between nurture path and urgent path — the core untested assumption</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Sample size + success criteria -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px;">Sample Size &amp; Success Criteria</div>
+      <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:16px;">
+        Assuming Intercom processes ~1M conversations/day, with low-trust signal rate of ~3% in B2B evaluation context = ~30,000 low-trust conversations/day.<br><br>
+        To detect a 10pp lift in booking rate (25% → 35%) with 80% power at p=0.05: <strong style="color:var(--ink);">~800 users per arm</strong> — achievable in under 24 hours at scale.
+      </div>
+      <div style="background:var(--surface);border-radius:8px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Ship if:</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.8;">
+          ✓ Treatment booking rate ≥ control + 8pp (accounting for MDE uncertainty)<br>
+          ✓ Classification gate accuracy ≥ 75%<br>
+          ✓ Overall CSAT does not drop more than 0.1 points<br>
+          ✓ AE false-positive brief rate &lt; 25%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What I would do if the test fails -->
+  <div style="background:var(--black);border-radius:var(--r);padding:28px 32px;">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ffffff44;margin-bottom:10px;">If the test fails</div>
+    <div style="font-size:15px;font-weight:500;color:#fff;margin-bottom:12px;">What a negative result would mean — and what I'd do next.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;font-size:13px;">
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">If classification accuracy &lt; 75%</div>
+        <div style="color:#ffffff77;line-height:1.6;">The gate question itself is ambiguous. Rewrite the classification question. Consider implicit signals (CRM tenure, past conversation count) instead of explicit self-report.</div>
+      </div>
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">If nurture and urgent show &lt; 5pp delta</div>
+        <div style="color:#ffffff77;line-height:1.6;">The self-ambiguity / brand-skeptic distinction doesn't matter at this scale. Collapse back to single escalation path. The classification overhead isn't worth it.</div>
+      </div>
+      <div>
+        <div style="color:var(--teal-md);font-weight:500;margin-bottom:6px;">If CSAT drops in treatment</div>
+        <div style="color:#ffffff77;line-height:1.6;">The gate adds friction that outweighs any routing benefit. Kill the gate entirely. Return to direct escalation and look for trust signals earlier in the conversation — before the user reaches a frustration state.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- WHAT I WAS WRONG ABOUT -->
+<section style="padding:64px 40px;max-width:1100px;margin:0 auto;">
+  <div class="section-label">Honest accounting</div>
+  <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">What the original prototype got wrong</div>
+  <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:32px;">Three decisions I made in the Lilai Ireland prototype that data and testing forced me to revise.</div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;display:grid;grid-template-columns:200px 1fr 1fr;gap:24px;align-items:start;">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:8px;">Original assumption</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:500;">Nurture-first would meaningfully outperform immediate escalation</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">What the data showed</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Sensitivity simulation: revenue delta between paths was ~NT$197K per 1,000 users under optimistic assumptions (nurture 20pp better). Too narrow to justify automation infrastructure before empirical validation.</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">Decision changed to</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Manual test first. 10–15 cases. Measure real response rate delta before building anything automated.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;display:grid;grid-template-columns:200px 1fr 1fr;gap:24px;align-items:start;">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:8px;">Original assumption</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:500;">Declarative copy was a neutral description</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">What stress test showed</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">"A consultant will reach out" is a pre-checked opt-in. For a user still comparing options, this signals "you're already a lead" before they've chosen to be one. Trust leakage at the moment it matters most.</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">Decision changed to</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Opt-in checkbox, default unchecked. Users who don't check it still receive their full diagnostic report. Outreach is earned, not assumed.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;display:grid;grid-template-columns:200px 1fr 1fr;gap:24px;align-items:start;">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-30);margin-bottom:8px;">Original assumption</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:500;">All low-trust signals were the same problem</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">What beta testing showed</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Two structurally different causes — brand skepticism and self-ambiguity — look identical in sentiment scores but need opposite responses. One needs human urgency; the other needs space.</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">Decision changed to</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.6;">Classification gate before any routing. One question, two paths, two entirely different follow-up approaches — and a testable hypothesis about which works better.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+
+<!-- ══ HOW I WOULD LEAD THIS ══ -->
+<section style="padding:64px 40px;background:var(--surface);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label">From concept to launch</div>
+    <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">How I would lead this if I owned it</div>
+    <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:32px;">This is a product proposal, not a shipped product. Here is how I would take it from hypothesis to production — across discovery, feasibility, beta, and scale.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+      <!-- Phase 1 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">Phase 1 · Discovery</div>
+        <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Is the trust-state taxonomy operationally real?</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:12px;">Before building anything, the hypothesis needs to be grounded in Fin's actual data — not external inference.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Review a sample of unresolved, escalated, and low-CSAT Fin conversations — looking for evidence that the five trust states are observably distinct</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Interview support leads and frontline agents: can they reliably distinguish brand skepticism from self-ambiguity in real conversations?</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Work with data science to test whether existing conversation signals (CRM attributes, message patterns, session history) can act as proxy classifiers before any LLM inference is built</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-30);margin-top:12px;font-family:var(--mono);">Gate to Phase 2: taxonomy is operationally distinguishable in ≥75% of reviewed cases</div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;">Phase 2 · Feasibility</div>
+        <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Can we classify trust state reliably enough to act on?</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:12px;">Classification accuracy and confidence thresholds determine whether automated routing is safe.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Build a labelled evaluation set from Phase 1 conversation data</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Compare three approaches: rule-based heuristics, lightweight classifier, LLM-based classification — measuring precision, recall, and latency trade-offs</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Set confidence thresholds: route low-confidence cases to the existing baseline rather than taking irreversible routing action</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-30);margin-top:12px;font-family:var(--mono);">Gate to Phase 3: classification precision ≥80% on held-out evaluation set</div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">Phase 3 · Beta</div>
+        <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Does agent-visible trust signal actually change outcomes?</div>
+        <div style="font-size:13px;color:var(--ink-60);line-height:1.65;margin-bottom:12px;">Start with the lowest-risk intervention: show agents the trust classification before they handle the escalation. No automated routing yet.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Launch with 7–10 design-partner customers, selected for high escalation volume and willingness to provide feedback</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Measure: classification agreement rate (agent agrees with system's trust label), handle time, CSAT delta, and inappropriate escalation rate</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.55;padding:8px 12px;background:var(--surface);border-radius:6px;">Agent feedback loop: collect corrections when agents disagree with trust label — use as training signal for Phase 4</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-30);margin-top:12px;font-family:var(--mono);">Gate to Phase 4: agent classification agreement ≥75%, CSAT neutral or positive vs baseline</div>
+      </div>
+
+            <!-- Phase 4 note -->
+    </div>
+
+    <div style="background:var(--teal-lt);border:1px solid var(--teal-md);border-radius:var(--r);padding:16px 20px;margin-top:16px;">
+      <div style="font-size:13px;color:var(--teal);line-height:1.65;"><strong>Phase 4 onwards:</strong> Automated routing, admin policy controls, and cross-channel trust memory — scoped for future planning once Phase 1–3 validation is complete. Deliberately not specced here: the right architecture depends on what Phases 1–3 reveal about classification confidence and operational fit.</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ══ ROADMAP ══ -->
+<section style="padding:64px 40px;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label">Product roadmap</div>
+    <div class="section-title" style="font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-bottom:6px;">Build sequence and rationale</div>
+    <div class="section-sub" style="font-size:14px;color:var(--ink-60);margin-bottom:32px;">Each phase validates the riskiest assumption before the next begins. Automated routing only after classification precision is established.</div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);">
+            <th style="text-align:left;padding:10px 16px;font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-30);font-weight:400;">Phase</th>
+            <th style="text-align:left;padding:10px 16px;font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-30);font-weight:400;">Build</th>
+            <th style="text-align:left;padding:10px 16px;font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-30);font-weight:400;">Why now, not later</th>
+            <th style="text-align:left;padding:10px 16px;font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-30);font-weight:400;">What I'm not building yet</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:14px 16px;vertical-align:top;"><span style="display:inline-block;background:var(--teal);color:#fff;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;">1</span></td>
+            <td style="padding:14px 16px;vertical-align:top;font-weight:500;color:var(--ink);">Agent-visible trust label</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-60);line-height:1.55;">Lowest-risk way to validate the taxonomy. No automated action — agents see the label and override if wrong. Generates training data for Phase 2.</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-30);line-height:1.55;">Automated routing — too early to trust classification precision</td>
+          </tr>
+          <tr style="background:var(--surface);border-bottom:1px solid var(--border);">
+            <td style="padding:14px 16px;vertical-align:top;"><span style="display:inline-block;background:var(--teal);color:#fff;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;">2</span></td>
+            <td style="padding:14px 16px;vertical-align:top;font-weight:500;color:var(--ink);">Suggested handoff brief</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-60);line-height:1.55;">Tests whether the trust-type context actually changes agent behaviour. Measures handle time delta and CSAT before any routing automation is introduced.</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-30);line-height:1.55;">Admin policy controls — not enough volume data yet to set meaningful thresholds</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:14px 16px;vertical-align:top;"><span style="display:inline-block;background:var(--amber);color:#fff;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;">3</span></td>
+            <td style="padding:14px 16px;vertical-align:top;font-weight:500;color:var(--ink);">Confidence-based automatic routing</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-60);line-height:1.55;">Only after Phase 1+2 establish precision. Routes only high-confidence classifications; low-confidence goes to baseline. Irreversible action requires earned trust in the classifier.</td>
+            <td style="padding:14px 16px;vertical-align:top;color:var(--ink-30);line-height:1.55;">Further scaling decisions — deferred until Phase 1–2 classification accuracy is validated</td>
+          </tr>
+          
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-left">
+    <strong>Arsha Hsia</strong> · PM Portfolio · Trust-Sensitive Escalation Case Study
+  </div>
+  <a class="footer-link" href="https://arsha-portfolio.github.io/lilai-decision-confidence/" target="_blank">
+    ↗ Original prototype (Lilai Ireland)
+  </a>
+</footer>
+
+<script>
+const scenarios = [
+  {
+    name: 'High trust',
+    fin: [
+      { role: 'user', text: "What's the difference between the Starter and Pro plan for Sales Hub?" },
+      { role: 'bot', text: "The Pro plan includes advanced automation, custom reporting, and predictive lead scoring. Starter covers basic CRM features and email sequences. Most teams with 5+ reps move to Pro for the pipeline analytics.", tag: null, type: 'resolved' },
+      { role: 'bot', text: "Did that answer your question?", tag: { label: 'RESOLVED', cls: 'resolved-tag' }, type: 'resolved' }
+    ],
+    finDecision: '<strong>Resolved by Fin.</strong> User asked a direct factual question. Sentiment neutral. No escalation triggered. Billed as one resolution at $0.99.',
+    trust: [
+      { role: 'user', text: "What's the difference between the Starter and Pro plan for Sales Hub?" },
+      { role: 'bot', text: "The Pro plan includes advanced automation, custom reporting, and predictive lead scoring. Starter covers basic CRM features and email sequences. Most teams with 5+ reps move to Pro for the pipeline analytics.", tag: null, type: '' },
+      { role: 'bot', text: "Did that cover what you needed?", tag: { label: 'RESOLVED · Trust state: high', cls: 'resolved-tag' }, type: 'resolved' }
+    ],
+    trustDecision: '<strong>Same outcome.</strong> Trust state: high. No gate needed. Fin answers, resolution confirmed. The Trust Layer adds no friction when trust is already present.'
+  },
+  {
+    name: 'Brand skepticism',
+    fin: [
+      { role: 'user', text: "Your AI keeps giving me generic answers. How do I know this isn't just going to push me toward the most expensive plan?" },
+      { role: 'bot', text: "I understand your concern — I'm here to help you find the right fit, not push any particular plan. Let me share what each tier actually includes so you can compare directly.", tag: null, type: '' },
+      { role: 'user', text: "That's exactly what a sales bot would say." },
+      { role: 'bot', text: "You're right to be skeptical. Let me connect you with a member of our team who can walk through this without any pressure.", tag: { label: 'ESCALATED · Sentiment: negative', cls: 'urgent' }, type: 'escalate-urgent' }
+    ],
+    finDecision: '<strong>Escalated to human agent.</strong> Trigger: negative sentiment detected after second message. Fin hands off with full conversation context. Not billed as a resolution.',
+    trust: [
+      { role: 'user', text: "Your AI keeps giving me generic answers. How do I know this isn't just going to push me toward the most expensive plan?" },
+      { role: 'bot', text: "Before I respond — can I ask which of these feels closer to where you are?", tag: null, type: 'classify' },
+      { role: 'bot', text: "A) The answer I gave felt inaccurate or biased\u2003\u2003B) You're not sure what you actually need yet", tag: { label: 'CLASSIFICATION GATE · Trust state: low', cls: 'classify-tag' }, type: 'classify' },
+      { role: 'user', text: "A — I don't trust that the AI is giving me an objective view." },
+      { role: 'bot', text: "That's fair. We're connecting you with a human advisor — they'll have full context of this conversation and no quota to fill.", tag: { label: 'ESCALATED · Type: brand skepticism → immediate human', cls: 'urgent' }, type: 'escalate-urgent' }
+    ],
+    trustDecision: '<strong>Classified as brand skepticism → immediate human escalation.</strong> Gate identifies the cause before routing. AE brief includes trust type, so the human arrives prepared — not repeating Fin\'s failed attempt.'
+  },
+  {
+    name: 'Self-ambiguity',
+    fin: [
+      { role: 'user', text: "I'm not sure this is even the right tool for us. We've tried a few things and nothing's really clicked." },
+      { role: 'bot', text: "I can understand the frustration. Fin is designed to help your team at every stage — let me share what our most common use cases look like for teams your size.", tag: null, type: '' },
+      { role: 'user', text: "That doesn't really help. I still don't know if this is the right direction." },
+      { role: 'bot', text: "Let me connect you with a specialist who can do a more tailored assessment.", tag: { label: 'ESCALATED · Sentiment: negative', cls: 'urgent' }, type: 'escalate-urgent' }
+    ],
+    finDecision: '<strong>Escalated to human agent.</strong> Trigger: continued negative sentiment. A resolution-first baseline treats this the same as brand skepticism — but this user needs space and content, not a sales call right now.',
+    trust: [
+      { role: 'user', text: "I'm not sure this is even the right tool for us. We've tried a few things and nothing's really clicked." },
+      { role: 'bot', text: "Before I respond — which of these is closer to where you are?", tag: null, type: 'classify' },
+      { role: 'bot', text: "A) You have doubts about whether our tool works\u2003\u2003B) You're still figuring out what you actually need", tag: { label: 'CLASSIFICATION GATE · Trust state: low', cls: 'classify-tag' }, type: 'classify' },
+      { role: 'user', text: "B — honestly I just don't have clarity on what the problem is yet." },
+      { role: 'bot', text: "That's actually useful to know. I have one question that might help: what does 'not clicking' look like in practice — is it a workflow issue, a visibility issue, or something else?", tag: null, type: 'classify' },
+      { role: 'user', text: "Mostly visibility — our managers don't know what's happening in the pipeline until it's too late." },
+      { role: 'bot', text: "Got it. I'm connecting you with someone from our team who specialises in pipeline visibility — not to sell you anything, but to map out whether this is a tool problem or a process problem first. They'll have this context when they reach out.", tag: { label: 'SDR BRIEF · Self-ambiguity → discovery call, problem definition first', cls: 'nurture' }, type: 'escalate-nurture' }
+    ],
+    trustDecision: '<strong>Classified as self-ambiguity → SDR discovery brief.</strong> Unlike brand skepticism (which needs a human immediately to rebuild trust), this user needs someone to help them define the problem — not close a deal. The Trust Layer routes to an SDR briefed on the ambiguity, with one job: define the problem together. Not pitch. <em>Note: in a resource-constrained context (e.g. a small consultancy with no SDR capacity), this same state routes to content-first with delayed outreach instead — the system design changes because the business model changes, not because the user changed.</em>'
+  },
+  {
+    name: 'Direction unclear',
+    fin: [
+      { role: 'user', text: "I'd like to learn more about your sales tools." },
+      { role: 'bot', text: "Great! Intercom helps teams manage customer conversations, automate support, and track deals across the funnel. Our most popular plan for growing teams includes...", tag: null, type: '' },
+      { role: 'user', text: "Okay, that's a lot. I'm not sure which part is relevant to us." },
+      { role: 'bot', text: "Let me connect you with a team member who can do a more tailored walkthrough.", tag: { label: 'ESCALATED · Repeated uncertainty detected', cls: 'urgent' }, type: 'escalate-urgent' }
+    ],
+    finDecision: '<strong>Escalated to human agent.</strong> Trigger: repeated uncertainty after Fin\'s generic answer. The baseline answered the wrong question first, then escalated when the user was more confused than before.',
+    trust: [
+      { role: 'user', text: "I'd like to learn more about your sales tools." },
+      { role: 'bot', text: "Before I go further — what's the problem you're trying to solve? The more specific you can be, the more useful I can be.", tag: { label: 'NO ANSWER YET · Direction unclear — clarification first', cls: 'no-answer' }, type: 'classify' }
+    ],
+    trustDecision: '<strong>System declines to answer.</strong> The query is too vague to give a meaningful response. Answering now risks confusion. The Trust Layer asks a clarifying question before any product information is shared — preventing the "answer to the wrong question" failure mode.'
+  },
+  {
+    name: 'Hidden stakeholder',
+    fin: [
+      { role: 'user', text: "This looks promising. How does the data handling work? Our CTO is going to have questions about security compliance." },
+      { role: 'bot', text: "Intercom is SOC 2 Type II certified and GDPR compliant. You can find the full security documentation at our Trust Center — happy to send that over.", tag: null, type: '' },
+      { role: 'user', text: "Thanks, I'll pass it along to him." },
+      { role: 'bot', text: "Sounds good! Is there anything else I can help with today?", tag: { label: 'RESOLVED · No escalation', cls: 'resolved-tag' }, type: 'resolved' }
+    ],
+    finDecision: '<strong>Resolved by Fin.</strong> Fin answered the security question accurately and the conversation closed. But the CTO — the actual decision-maker — is now involved with no AE awareness. The deal is at risk of stalling.',
+    trust: [
+      { role: 'user', text: "This looks promising. How does the data handling work? Our CTO is going to have questions about security compliance." },
+      { role: 'bot', text: "Intercom is SOC 2 Type II certified and GDPR compliant. Full documentation at our Trust Center — I'll send that now.", tag: null, type: '' },
+      { role: 'user', text: "Thanks, I'll pass it along to him." },
+      { role: 'bot', text: "Noted — I'm flagging this conversation for your account team so they have context before your CTO is in the loop. They'll reach out to make sure the right people get the right information.", tag: { label: 'STAKEHOLDER DETECTED · AE brief triggered', cls: 'classify-tag' }, type: 'classify' }
+    ],
+    trustDecision: '<strong>Hidden stakeholder detected → AE brief triggered.</strong> Fin answers the immediate question, but the system detects "CTO… questions" as a stakeholder signal. AE is briefed with conversation context before the user\'s internal meeting — keeping the deal moving.'
+  }
+];
+
+function buildMsg(m, panelType) {
+  // 外層 wrapper（控制 bot/user 方向）
+  const div = document.createElement('div');
+  div.className = `msg ${m.role === 'user' ? 'user' : 'bot'}`;
+
+  // 橫排：頭像 + 氣泡區
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+
+  // 頭像
+  const av = document.createElement('div');
+  av.className = `msg-avatar ${m.role === 'user' ? 'user-av' : (panelType === 'fin' ? 'fin-av' : 'trust-av')}`;
+  if (m.role === 'user') {
+    av.textContent = 'You';
+  } else {
+    const avatarImg = document.createElement('img');
+    avatarImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAGyElEQVR4nN1bT2wUVRj/vX8zs7Pd3ZldWgppiZSsTVs4mAChQopw6GJCJTHGRMPZG+HggVu5Gs9o9EITTVQ4GWNMiHrQk9FwM5p4QE2RaKlii22XmXnzPOybdnYZWnZndqH9JV93due9732/+b7353vzCmyAAgBjDGNjY1Ou687Ztn3LNE2fEKIAPFVCCFGWZfm2bd9yXXdubGxsilLaxCUOCgAnT54cLJfLHwshgidNoF3hnAeO43xUq9X2tJKkADA1NXXItu3fdIUQQKA/n7jxW0iTrbZt/3bs2LFDcW50ZmZmdz6fn9cVvKfA6E7FA6Byudzvp0+f3g2AghACx3Gu7QByTSQdx7lGKQXGx8dPcM4jN/cilHoR+gHnPBwfHz8B13U/1KPkthtYNiMIQLmu+wGxbXt+dXV1SN8gyB4KABFCBIZhfAZAeJ531vd90u02c7ncPEzTzCJcQiSHXQhACiFWJyYmTlFKQSnFyMjIy5xzH4BsU19bormlJicfcb0eKvl8/gtCCAAYADilFJZlfbdZnUfca1semvHbBaWUWpa1aJrmfTTmHRW7rQCAc740OztLoT0jpaSc8+V4mdg1M01z2bKsRUJIavsipR15jjEmBwcH37x06VKpVqvtqVQqc3rAip68D0AVCoXr2oNcPxMUCoWv0ewxSQhRruterdVqey5evOjs3bv3TcZYiHSe7KhSAED19fXdiK3/oJQSlmXdwUY/8nW5a60Ei8XiVzFdEoAyDOMPpRSP9DHGUCqVvmx5ED0JUQUAQRD8FIYhBSAAMEqp7/v+r7pMGBUOw7CpMiEE8QcT03eLUhoAYACElJLW6/Uf42XaBd+6yKNRr9cjT1EASilFpJRhazmlHrZNe7QJ+kFE04cCED548KAjYhFSdeIEI9Umhm9Vd11HGptakckotRWSPNgSol1Db1pBMsleoCcEkwYZxlgvmn5yIRqGoQI27YuZoNceVABIEARYXFy8BzSG3m62/cQ82G1iEXpCkCTEYbdDM0K3CRIAqFQqDucc0CEK7LBpIikr2CkeBLC9J/r1kNOI1pFNCMOwiSQh5FEefCx97SAVwVKp5GoDOADKGFOWZbkx45BwnfQbAYBcLucyxpS2iwNQjuO4CXUfG50SZADU2tramenp6WEAdUJIUK1Wp33fH8VGhgEAUEoFQRBE38ns7CzVaVHcjtD3/dFqtTpNCAkA1M+dOze8trZ2BjrT79DWjjPlEICyLGt+YGDgrXK5/I5hGCvxe9CJrG3bP+g+R6H3ZHK5XGtGH6KR9K7s2rXr3cHBwbcty5pv0dezjL6J5BZvnyRjTFar1TcYY2CMoVqtviaE2GxX7aE2OpXUnRgbW3xAI4xa+5sCQBhjEEJ8RykNPc97PgiC9XsJ5aW+pkibsyLjBHMTxMkkEesKekkQ2PBMb3IlZEswinuCzr2ThY4mZEWwaVpA8+DwuHa0erVVZ0fIgqBC4+XKKmNsQUq5SynVp5RCXBIb1yuaaBuREPIf5/yfIAgGPM+zUtrVaAPpCIYASKFQ+OHo0aOvnT9//s7Vq1fdpaWlweXl5QHf93d7nldSSpXu37/P+/v73TAMw4WFhXuO44SMsSXDMJYMw1jo6+v7s1gs/nXhwoV/r1y5MnTz5s1PVlZWntP2pfJkmnlQMsbU6OjoC1pXFitoAgDDw8PTlNL4QqAjSbXxGyEIgqgPxd/5tTNQxI1iAJTWiTZ0PJbydiUAoIrF4qd6KZbFA+P65cyNeBspJFVlBUByztWBAwde0gaKFOQEAAwPD7+aRXhmRhCANE3z7uHDh0dSkBQAcOrUqQnTNO9pvVm8fU6tICKpLMv65ciRI89qgxmS16ZxkFg5HD9+fKJQKNyO63xaCMZJLuzbt++Vlp1rhkb/jMt6AcYYhoaGXjcM4++MyWVKcN0wxpgqFoufj4yMvDg3N2cl7b9QSnH58mV7//79Z0ul0g2dyWdNThFCSNZ7sJFyyjmHYRi3hBDfCyF+5pzfpZSSer3eL6Uc9zzvqOd5z0gpAb1oQIZZBiEExDAM6XleN7a4JBrGruuONppaHmg0kGSeYRiGEVLG2G39PVM3omFwdLIiABAopQKlVHScKzrSRZE9OQUAjLHb1DCMb/SPD7+GzQbRDlmSdGtzNAQAy7K+pUNDQ+8LkWZufjrBOVf9/f3vgTGGcrl8HQ237rzjlNg4EHs7XmCbigdA5fP5+ZmZmcaB2OjP5OTkwZ1ypHlycvIgGmg+t12r1fY4jvPRdjyULoSQ5XL546RD6U0kKaXb7t8KKpXK3MTExAux5eE6uf8BYbksWvHccBYAAAAASUVORK5CYII=';
+    avatarImg.alt = 'Bot';
+    av.appendChild(avatarImg);
+  }
+
+  // 訊息內容區（氣泡 + source + tag）
+  const content = document.createElement('div');
+  content.className = 'msg-content';
+
+  // 氣泡
+  const bubble = document.createElement('div');
+  bubble.className = `msg-bubble ${m.type || ''}`;
+  bubble.textContent = m.text;
+  content.appendChild(bubble);
+
+  // AI badge（只有 bot 的 resolved 類型顯示）
+  if (m.role !== 'user' && m.type === 'resolved') {
+    const badge = document.createElement('div');
+    badge.className = 'msg-ai-badge';
+    badge.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="#9CA3AF"/><text x="5" y="7.5" text-anchor="middle" font-size="6" fill="#9CA3AF">AI</text></svg> AI Answer';
+    content.appendChild(badge);
+  }
+
+  // Escalation tag（放在氣泡下方）
+  if (m.tag) {
+    const tagWrap = document.createElement('div');
+    const span = document.createElement('span');
+    span.className = `esc-tag ${m.tag.cls}`;
+    span.textContent = m.tag.label;
+    tagWrap.appendChild(span);
+    content.appendChild(tagWrap);
+  }
+
+  row.appendChild(av);
+  row.appendChild(content);
+  div.appendChild(row);
+  return div;
+}
+
+
+function setScenario(idx) {
+  document.querySelectorAll('.stab').forEach((t, i) => t.classList.toggle('active', i === idx));
+
+  const s = scenarios[idx];
+  const finChat = document.getElementById('fin-chat');
+  const trustChat = document.getElementById('trust-chat');
+
+  finChat.innerHTML = '';
+  trustChat.innerHTML = '';
+
+  s.fin.forEach((m, i) => {
+    setTimeout(() => finChat.appendChild(buildMsg(m, 'fin')), i * 120);
+  });
+  s.trust.forEach((m, i) => {
+    setTimeout(() => trustChat.appendChild(buildMsg(m, 'trust')), i * 120);
+  });
+
+  document.getElementById('fin-decision').innerHTML = s.finDecision;
+  document.getElementById('trust-decision').innerHTML = s.trustDecision;
+}
+
+setScenario(0);
+</script>
+
+<!-- ══ SEO / CRAWLER STATIC CONTENT ══
+     All five scenario conversations are included here as static text
+     so search engines, AI crawlers, and ATS systems can index the full
+     case study content regardless of JavaScript execution.
+     Visually hidden from sighted users. ──>
+<div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;" aria-hidden="true">
+
+  <article>
+    <h1>Trust-Sensitive Escalation: A Redesign Concept for Intercom Fin</h1>
+    <p>A PM portfolio case study by Arsha Hsia. This prototype demonstrates a trust-state classification layer for Intercom Fin, showing how routing based on trust state rather than sentiment score produces better outcomes for B2B buyers in high-cost, long-cycle decisions.</p>
+
+    <h2>Core Design Hypothesis</h2>
+    <p>Fin's current escalation logic routes based on negative sentiment and problem complexity. Neither signal reveals why trust is low — which determines what to do next. This prototype proposes a Classification Gate that separates brand skepticism from self-ambiguity before any routing decision, because these two states require opposite interventions.</p>
+
+    <h2>Scenario 1: High Trust</h2>
+    <h3>Fin Current Logic</h3>
+    <p>User: What's the difference between the Starter and Pro plan for Sales Hub?</p>
+    <p>Fin: The Pro plan includes advanced automation, custom reporting, and predictive lead scoring. Starter covers basic CRM features and email sequences. Most teams with 5+ reps move to Pro for the pipeline analytics.</p>
+    <p>Fin: Did that answer your question?</p>
+    <p>System decision: Resolved by Fin. User asked a direct factual question. Sentiment neutral. No escalation triggered.</p>
+    <h3>Trust Layer Redesign</h3>
+    <p>Same outcome. Trust state: high. No gate needed. Fin answers, resolution confirmed. The Trust Layer adds no friction when trust is already present.</p>
+
+    <h2>Scenario 2: Brand Skepticism</h2>
+    <h3>Fin Current Logic</h3>
+    <p>User: Your AI keeps giving me generic answers. How do I know this isn't just going to push me toward the most expensive plan?</p>
+    <p>Fin: I understand your concern — I'm here to help you find the right fit, not push any particular plan.</p>
+    <p>User: That's exactly what a sales bot would say.</p>
+    <p>Fin: You're right to be skeptical. Let me connect you with a member of our team.</p>
+    <p>System decision: Escalated to human agent. Trigger: negative sentiment detected. Fin hands off with no context about why trust is low.</p>
+    <h3>Trust Layer Redesign</h3>
+    <p>Before responding, the Trust Layer inserts a Classification Gate: "Before I respond — which of these is closer to where you are? A) You have doubts about whether our answers are objective. B) You're still figuring out what you actually need."</p>
+    <p>User selects A (brand skepticism). System decision: Escalated immediately to human agent with trust-type brief. AE arrives knowing this is a credibility issue, not a product question — and prepares social proof rather than a product pitch.</p>
+
+    <h2>Scenario 3: Self-Ambiguity</h2>
+    <h3>Fin Current Logic</h3>
+    <p>User: I'm not sure this is even the right tool for us. We've tried a few things and nothing's really clicked.</p>
+    <p>Fin: I can understand the frustration. Let me share what our most common use cases look like for teams your size.</p>
+    <p>User: That doesn't really help. I still don't know if this is the right direction.</p>
+    <p>Fin: Let me connect you with a specialist who can do a more tailored assessment.</p>
+    <p>System decision: Escalated to human agent. Trigger: continued negative sentiment. A resolution-first baseline treats this the same as brand skepticism — but this user needs problem definition, not a sales call.</p>
+    <h3>Trust Layer Redesign</h3>
+    <p>Classification Gate identifies this as self-ambiguity (user hasn't defined their problem yet). System asks one clarifying question: "What does 'not clicking' look like in practice — is it a workflow issue, a visibility issue, or something else?" User responds: "Mostly visibility — our managers don't know what's happening in the pipeline until it's too late."</p>
+    <p>System decision: SDR discovery brief triggered. SDR is briefed on the specific problem (pipeline visibility) and arrives to help define whether this is a tool problem or a process problem — not to pitch. This is the key distinction: self-ambiguity requires problem definition before product recommendation.</p>
+
+    <h2>Scenario 4: Direction Unclear</h2>
+    <h3>Fin Current Logic</h3>
+    <p>User: I'd like to learn more about your sales tools.</p>
+    <p>Fin: Great! Fin can answer most of your questions. Let me share what our most common use cases look like...</p>
+    <p>User: Okay, that's a lot. I'm not sure which part is relevant to us.</p>
+    <p>Fin: Let me connect you with a team member who can do a more tailored walkthrough.</p>
+    <p>System decision: Escalated to human agent. Trigger: repeated uncertainty after Fin's generic answer. The baseline answered the wrong question first, then escalated when the user was more confused than before.</p>
+    <h3>Trust Layer Redesign</h3>
+    <p>System declines to answer immediately. Query is too vague to give a meaningful response. Trust Layer asks first: "Before I go further — what's the problem you're trying to solve? The more specific you can be, the more useful I can be."</p>
+    <p>System decision: No answer yet. Direction unclear — clarification first. This prevents the "answer to the wrong question" failure mode that Fin's current logic produces.</p>
+
+    <h2>Scenario 5: Hidden Stakeholder</h2>
+    <h3>Fin Current Logic</h3>
+    <p>User: This looks promising. How does the data handling work? Our CTO is going to have questions about security compliance.</p>
+    <p>Fin: Fin is SOC 2 Type II certified and GDPR compliant. You can find the full security documentation at our trust page.</p>
+    <p>User: Thanks, I'll pass it along to him.</p>
+    <p>Fin: Sounds good! Is there anything else I can help with today?</p>
+    <p>System decision: Resolved by Fin. Fin answered the security question accurately. But the CTO — the actual decision-maker — is now involved with no AE awareness. The deal is at risk of stalling.</p>
+    <h3>Trust Layer Redesign</h3>
+    <p>Fin answers the security question accurately. But the Trust Layer detects stakeholder language ("Our CTO is going to have questions"). System flags the deal and triggers an AE brief: "I'm flagging this conversation for your account team so they have context before your CTO is in the loop."</p>
+    <p>System decision: Hidden stakeholder detected. AE brief triggered with stakeholder role (CTO), likely concern (security compliance), and recommended next step (proactively send security documentation and SOC 2 report before the internal meeting). This keeps the deal moving rather than stalling while the user's CTO asks questions the AE doesn't know are coming.</p>
+
+    <h2>Design Decisions</h2>
+    <h3>Decision 1: Trust Classification Gate Before Escalation</h3>
+    <p>Fork: Route all low-trust signals to immediate human escalation (Fin's current logic) vs. insert a classification question first. Judgment: Brand skepticism and self-ambiguity look identical in sentiment scores but need opposite responses. Decision: Insert classification gate. Failure condition: 15 consecutive low-trust cases show less than 10 percentage points difference in response rate between the two paths.</p>
+    <h3>Decision 2: System Declines to Answer Direction-Unclear Users</h3>
+    <p>Fork: Fin attempts an answer using available knowledge vs. system refuses to answer and asks a clarifying question first. Judgment: An answer to the wrong question increases confusion, not confidence. In high-cost B2B decisions, a misaligned answer is worse than no answer. Failure condition: Users flagged as direction-unclear who receive a clarifying question have a lower satisfaction score than those who received a direct answer.</p>
+    <h3>Decision 3: Hidden Stakeholder Detection Triggers AE Brief</h3>
+    <p>Fork: Continue conversation as normal vs. detect stakeholder language and flag the deal with a stakeholder brief for the AE. Judgment: Hidden stakeholders are the single most common reason B2B deals stall after a strong AI-assisted discovery. Failure condition: AE brief false positive rate greater than 30%.</p>
+
+    <h2>Validated in Practice</h2>
+    <p>The Trust-Sensitive Escalation framework was first validated in a live environment: Lilai Ireland, a study abroad consultancy co-founded by Arsha Hsia in Dublin. 600+ real survey responses and 33 consultant session records were used to build the Decision Blocker Taxonomy. Beta results: 5 students tested, 4 converted to consultation booking (80% conversion rate). The framework is now being applied to B2B SaaS contexts, starting with this Intercom Fin redesign concept.</p>
+  </article>
+
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Trust-Sensitive Escalation: A Redesign Concept for Intercom Fin",
+  "author": {
+    "@type": "Person",
+    "name": "Arsha Hsia",
+    "url": "https://arsha-portfolio.github.io"
+  },
+  "description": "A PM portfolio case study demonstrating trust-state classification for AI escalation systems. Built on real data from 600+ survey responses, applied to Intercom Fin as a redesign concept.",
+  "keywords": "product manager, AI escalation, trust-sensitive design, Intercom Fin, B2B SaaS, human-in-the-loop, PM portfolio",
+  "about": [
+    {"@type": "Thing", "name": "Intercom Fin"},
+    {"@type": "Thing", "name": "AI escalation design"},
+    {"@type": "Thing", "name": "Trust-sensitive routing"},
+    {"@type": "Thing", "name": "Human-in-the-loop AI"},
+    {"@type": "Thing", "name": "B2B SaaS product management"}
+  ]
+}
+</script>
+
+</body>
+</html>
